@@ -17,8 +17,16 @@ interface Market {
     image?: string;
 }
 
-export default function VeritasWidget() {
-    const contextKeyword = useContextScraper();
+
+interface VeritasWidgetProps {
+    forcedContext?: string;
+}
+
+export default function VeritasWidget({ forcedContext }: VeritasWidgetProps = {}) {
+    const scrapedContext = useContextScraper();
+    // Prioritize forcedContext (from props) -> then scrapedContext (from hook)
+    const contextKeyword = forcedContext || scrapedContext;
+
     const [markets, setMarkets] = useState<Market[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
