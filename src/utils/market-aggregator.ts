@@ -8,6 +8,8 @@ export interface MarketData {
     source: 'Kalshi' | 'Polymarket';
     url: string;
     image?: string;
+    volume?: number;
+    clobTokenIds?: string[];
 }
 
 /**

@@ -15,6 +15,7 @@ interface Market {
     source: string;
     url: string;
     image?: string;
+    volume?: number;
 }
 
 
@@ -116,7 +117,7 @@ export default function VeritasWidget({ forcedContext }: VeritasWidgetProps = {}
                                 </span>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <AnimatePresence mode="popLayout">
                                     {markets.length === 0 ? (
                                         <motion.p
@@ -147,60 +148,108 @@ export default function VeritasWidget({ forcedContext }: VeritasWidgetProps = {}
 }
 
 function MarketCard({ market, index }: { market: Market; index: number }) {
+    // Advanced Feature: Whale Alert
+    // Threshold: $10,000 volume or arbitrarily high for demo if real volume is low
+    const isWhale = (market.volume && market.volume > 10000);
+
     return (
-        <motion.a
-            href={market.url}
-            target="_blank"
-            rel="noopener noreferrer"
+        <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative block p-3 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-transparent hover:border-blue-500/30 rounded-xl transition-all duration-200"
+            className="group relative block p-4 bg-white/40 dark:bg-white/5 hover:bg-white/60 dark:hover:bg-white/10 border border-transparent hover:border-blue-500/30 rounded-xl transition-all duration-200"
         >
             <div className="flex items-start gap-3">
                 {market.image ? (
-                    <img src={market.image} alt="Market Icon" className="w-8 h-8 rounded-full shadow-sm object-cover bg-white" />
+                    <img src={market.image} alt="Market Icon" className="w-10 h-10 rounded-full shadow-sm object-cover bg-white" />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-bold">
                         ?
                     </div>
                 )}
 
                 <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-800 dark:text-gray-100 leading-tight line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-tight line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {market.question}
                     </p>
-                    <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                            <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-white/10">
-                                {market.source}
+
+                    {/* Advanced Feature: Whale Alert & Volume */}
+                    <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-500">
+                        <span className="bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-[9px]">
+                            Polymarket
+                        </span>
+                        {isWhale && (
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded">
+                                🐳 Whale Alert
                             </span>
-                        </div>
+                        )}
                     </div>
                 </div>
 
+                {/* Advanced Feature: Truth Meter (Probability + Gauge) */}
                 <div className="flex flex-col items-end gap-1">
                     <span className={clsx(
-                        "text-sm font-bold",
+                        "text-lg font-bold",
                         market.probability > 50 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-600 dark:text-gray-300"
                     )}>
                         {market.probability}%
                     </span>
-                    <span className="text-[9px] text-gray-400">Yes</span>
+                    <TruthMeter probability={market.probability} />
                 </div>
             </div>
 
-            {/* Progress Bar Background */}
-            <div className="absolute bottom-0 left-0 h-[2px] bg-blue-500/20 w-full rounded-b-xl overflow-hidden">
+            {/* Advanced Feature: Hedge/Trade CTA */}
+            <div className="mt-3 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="text-[10px] text-gray-400">
+                    {market.volume ? `Vol: $${market.volume.toLocaleString()}` : 'Vol: --'}
+                </div>
+                <a
+                    href={market.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                    Trade on Polymarket <ExternalLink className="w-3 h-3" />
+                </a>
+            </div>
+
+            {/* Background Progress Bar (Subtle) */}
+            <div className="absolute bottom-0 left-0 h-[3px] bg-blue-500/10 w-full rounded-b-xl overflow-hidden">
                 <div
-                    className="h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                    className="h-full bg-blue-500/50"
                     style={{ width: `${market.probability}%` }}
                 />
             </div>
+        </motion.div>
+    );
+}
 
-            <ExternalLink className="absolute top-2 right-2 w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </motion.a>
+function TruthMeter({ probability }: { probability: number }) {
+    let label = "Uncertain";
+    let color = "bg-gray-200";
+
+    if (probability <= 20) { label = "Highly Unlikely"; color = "bg-red-400"; }
+    else if (probability <= 40) { label = "Unlikely"; color = "bg-orange-400"; }
+    else if (probability <= 60) { label = "Uncertain"; color = "bg-yellow-400"; }
+    else if (probability <= 80) { label = "Likely"; color = "bg-lime-400"; }
+    else { label = "Consensus"; color = "bg-emerald-500"; }
+
+    return (
+        <div className="flex flex-col items-end">
+            <span className="text-[9px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">{label}</span>
+            <div className="flex gap-0.5">
+                {[20, 40, 60, 80, 100].map((threshold) => (
+                    <div
+                        key={threshold}
+                        className={clsx(
+                            "w-1.5 h-1 rounded-sm",
+                            probability >= (threshold - 19) ? color : "bg-gray-200 dark:bg-white/10"
+                        )}
+                    />
+                ))}
+            </div>
+        </div>
     );
 }

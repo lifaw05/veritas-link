@@ -17,6 +17,8 @@ export interface PolymarketMarket {
     outcomePrices: string; // JSON string e.g. "[\"0.25\", \"0.75\"]"
     active: boolean;
     closed: boolean;
+    volume: string; // API returns volume as string "1234.56"
+    clobTokenIds: string; // JSON string e.g. "[\"token1\", \"token2\"]"
 }
 
 export async function searchPolymarket(keyword: string): Promise<MarketData[]> {
@@ -44,6 +46,12 @@ export async function searchPolymarket(keyword: string): Promise<MarketData[]> {
 
                         if (yesIndex !== -1 && prices[yesIndex]) {
                             const probability = parseFloat(prices[yesIndex]) * 100;
+                            let tokenIds: string[] = [];
+                            try {
+                                tokenIds = JSON.parse(market.clobTokenIds);
+                            } catch (e) {
+                                // consistent with existing error handling
+                            }
 
                             results.push({
                                 id: `poly-${market.id}`,
@@ -51,7 +59,9 @@ export async function searchPolymarket(keyword: string): Promise<MarketData[]> {
                                 probability: Math.round(probability),
                                 source: 'Polymarket',
                                 url: `https://polymarket.com/event/${event.slug}`,
-                                image: event.icon || event.image // Polymarket API usually provides 'icon' or 'image' at event level
+                                image: event.icon || event.image, // Polymarket API usually provides 'icon' or 'image' at event level
+                                volume: parseFloat(market.volume || '0'),
+                                clobTokenIds: tokenIds
                             });
                         }
                     } catch (e) {

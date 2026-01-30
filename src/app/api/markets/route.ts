@@ -9,6 +9,7 @@ interface SafeMarketDTO {
     source: string;
     url: string;         // Essential for UX
     image?: string;      // Visuals
+    volume?: number;     // Whale Alert Indicator
     // id is excluded if not strictly needed, or we can hash it. 
     // For now, we keep a sanitized ID for React keys if it's just a public identifier.
     id: string;
@@ -38,7 +39,8 @@ export async function GET(request: Request) {
             probability: m.probability,
             source: m.source,
             url: m.url,
-            image: m.image
+            image: m.image,
+            volume: m.volume
         }));
 
         return NextResponse.json({ markets: safeMarkets });
